@@ -9,8 +9,16 @@ import sentence as st
 
 class Foo(QObject):
     @pyqtSlot(int, result=str)
-    def compute(self, value):
-        return st.getById(value)
+    def sentenceById(self, value):
+        return st.getSentenceById(value)
+
+    @pyqtSlot(int, result=str)
+    def translationById(self, value):
+        return st.getTranslationById(value)
+
+    @pyqtSlot(str, result=str)
+    def sentencesByRegex(self, value):
+        return st.getSentencesByRegex(value)
 
     @pyqtSlot()
     def quit(self):
