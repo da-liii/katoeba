@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      function updateEntry() {
+      var element = document.getElementById("entry");
+      var result = foo.compute(element.value);
+      var text = document.getElementById("text");
+      text.innerHTML = "<p>" + result + "</p>";
+      }
+    </script>
+  </head>
+  <body>
+    <div>
+      <input type="text" id="entry" value="1"/>
+      <input type="button" value="Compute" onclick="updateEntry()"/>
+    </div>
+    <div id="text">
+    </div>
+    <div>
+      <input type="button" value="Quit" onclick="foo.quit()"/>
+    </div>
+  </body>
+</html>
