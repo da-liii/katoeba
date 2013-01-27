@@ -1,0 +1,36 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+  <file>js/sentence.js</file>
+  <file>images/eng.png</file>
+  <file>images/add_to_list.png</file>
+  <file>images/arrow_down.png</file>
+  <file>images/audio_unavailable.png</file>
+  <file>images/bg_footer.png</file>
+  <file>images/bg_main.png</file>
+  <file>images/default.css</file>
+  <file>images/eng.png</file>
+  <file>images/favicon.ico</file>
+  <file>images/favorite.png</file>
+  <file>images/favorites.add.js</file>
+  <file>images/furigana.css</file>
+  <file>images/ga.js</file>
+  <file>images/generic_functions.js</file>
+  <file>images/jquery-mini.js</file>
+  <file>images/loading.gif</file>
+  <file>images/loading-small.gif</file>
+  <file>images/module_background.png</file>
+  <file>images/no_mail.png</file>
+  <file>images/pagination.css</file>
+  <file>images/profile.png</file>
+  <file>images/search_bar_body.png</file>
+  <file>images/search_bar_left.png</file>
+  <file>images/search_bar_right.png</file>
+  <file>images/sentences.add_translation.js</file>
+  <file>images/sentences_group.css</file>
+  <file>images/sentences_lists.menu.js</file>
+  <file>images/show_all_in.css</file>
+  <file>images/title.png</file>
+  <file>images/translate.png</file>
+  <file>images/valid_16x16.png</file>
+</qresource>
+</RCC>

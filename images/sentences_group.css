@@ -1,0 +1,34 @@
+/* Effective stylesheet produced by snapshot save */
+.sentences_set .menu { vertical-align: text-bottom; overflow: hidden; border-bottom: 1px dashed rgb(204, 204, 204); margin: 2px 0px; padding: 0px; }
+.menu li { display: inline; font-size: 13px; padding: 2px 10px; line-height: 20px; cursor: pointer; }
+.belongsTo { float: right; color: rgb(117, 195, 75); font-weight: bold; margin-top: -2px; }
+.belongsTo a { padding: 0px 0px 0px 5px; }
+.listOfLists { width: 150px; }
+.mainSentence { font-family: georgia; font-size: 1.7em; }
+.mainSentence .languageFlag, .mainSentence .audioButton, .mainSentence select { margin-top: 10px; }
+.sentenceContent .text { display: block; padding: 5px; }
+.sentence { padding: 2px; }
+.sentence a { color: rgb(67, 67, 67); text-decoration: none; }
+.sentence a:hover { color: rgb(234, 163, 21); }
+.sentence .button { float: left; margin-top: 8px; margin-right: 8px; margin-left: 5px; }
+.directTranslation, .indirectTranslation { font-size: 1.2em; }
+.indirectTranslation a { color: rgb(153, 135, 120); }
+.sentences_set div.submit { display: inline; }
+.sentences_set div.input { display: inline; }
+.romanization { color: rgb(161, 161, 161); margin-top: -8px; padding: 5px; margin-right: 40px; }
+a.romanization { color: rgb(161, 161, 161) ! important; display: block; }
+.translations .romanization { padding-left: 30px; }
+.editableSentence:hover { background: none repeat scroll 0% 0% rgb(238, 238, 136); }
+.editInPlaceForm input.text { width: 98%; display: inline; font-family: verdana,sans-serif; font-size: 14px; }
+.editableFlag:hover { cursor: pointer; border-top: 1px solid rgb(170, 170, 170); border-left: 1px solid rgb(170, 170, 170); }
+.selectLang { display: none; float: right; margin-top: 5px; }
+.addTranslations { display: none; }
+.addTranslations input { display: inline; }
+.addTranslationsTextInput { width: 550px; font-family: verdana,sans-serif; font-size: 14px; }
+.languageFlag { float: right; margin: 5px; }
+.audioButton { margin: 6px; float: right; width: 20px; height: 16px; }
+.audioAvailable { background: url("urn:not-loaded:http://css.tatoeba.org/img/audio.png") repeat scroll 0% 0% transparent; }
+.audioUnavailable { background: url("audio_unavailable.png") repeat scroll 0% 0% transparent; }
+#audioPlayer { width: 0px; height: 0px; }
+.infoIcon { float: left; margin: 6px 10px 2px 5px; }
+.loading { display: none; }
