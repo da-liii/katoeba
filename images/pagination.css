@@ -1,7 +1,0 @@
-/* Effective stylesheet produced by snapshot save */
-.paging { margin: 20px 0px; text-align: center; }
-.paging a { padding: 3px 5px; margin: 2px; background: none repeat scroll 0% 0% rgb(211, 243, 185); color: rgb(37, 125, 12); }
-.paging a:hover { background: none repeat scroll 0% 0% rgb(37, 125, 12); color: white; }
-.paging .disabled { display: inline; padding: 3px 5px; margin: 3px; background: none repeat scroll 0% 0% rgb(238, 238, 238); }
-.paging .current { padding: 3px 5px; margin: 3px; background: none repeat scroll 0% 0% rgb(159, 211, 116); color: white; font-weight: bold; }
-.paging .numbers { padding: 0px 10px; }

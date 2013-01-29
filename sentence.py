@@ -3,16 +3,18 @@
 from subprocess import check_output
 
 parser = "tatoparser"
+show_id = "--display-ids"
+show_lang = "--display-lang"
 
 def getSentenceById(id):
     sentence = unicode(
-        check_output([parser,"--has-id", str(id)]),
+        check_output([parser, show_id, show_lang, "--has-id", str(id)]),
         'utf-8')
     return sentence
 
 def getTranslationById(id):
     sentences = unicode(
-        check_output([parser, "-i", "--is-linked-to", str(id)]), 
+        check_output([parser, show_id, show_lang, "--is-linked-to", str(id)]), 
         'utf-8')
     return sentences
 
@@ -20,7 +22,7 @@ def getTranslationById(id):
 def getSentencesByRegex(regex):
     regexUTF8 = regex.toUtf8()
     sentences = unicode(
-        check_output([parser, "-i", "-r", str(regexUTF8)]),
+        check_output([parser, show_id, show_lang, "-r", str(regexUTF8)]),
         'utf-8')
     print sentences
     return sentences

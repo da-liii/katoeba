@@ -1,8 +1,0 @@
-/* Effective stylesheet produced by snapshot save */
-ruby { display: inline-table; text-align: center; white-space: nowrap; text-indent: 0px; margin: 0px; vertical-align: bottom; }
-ruby > rb, ruby > rbc { display: table-row-group; }
-ruby > rt, ruby > rbc + rtc { display: table-header-group; font-size: 60%; letter-spacing: 0px; }
-ruby > rbc + rtc + rtc { display: table-footer-group; font-size: 60%; letter-spacing: 0px; }
-rbc > rb, rtc > rt { display: table-cell; letter-spacing: 0px; }
-rtc > rt[rbspan] { display: table-caption; }
-rp { display: none; }
