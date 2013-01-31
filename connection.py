@@ -25,7 +25,9 @@ class Data(object):
                          "tatoid int,"
                          "listid int,"
                          "sentence varchar(256),"
-                         "lang varchar(3))"
+                         "lang varchar(3),"
+                         "sortid int,"
+                         "tr varchar(1))"
                          )
 
     def createConnection(self):

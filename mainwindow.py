@@ -1,5 +1,5 @@
 import sys
-from PyQt4.QtGui import QMainWindow, QHeaderView, QAction
+from PyQt4.QtGui import QMainWindow, QHeaderView, QAction, QDesktopServices
 from PyQt4 import QtSql,QtCore
 from ui_mainwindow import *
 import connection
@@ -24,43 +24,7 @@ class MainWindow(QMainWindow):
         self.ui.goButton.clicked.connect(self.insertByRegrex)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegrex)
 
-    def insertRecord(self, sentence):
-        try:
-            iid, lang, st = sentence.split("\t")
-            record = QtSql.QSqlRecord()
-            if len(st) <= 2:
-                print "len <= 2"
-            else:
-                print st
-            f0 = QtSql.QSqlField("stid", QtCore.QVariant.Int)
-            f1 = QtSql.QSqlField("tatoid", QtCore.QVariant.Int)
-            f2 = QtSql.QSqlField("listid", QtCore.QVariant.Int)
-            f3 = QtSql.QSqlField("sentence", QtCore.QVariant.String)
-            f4 = QtSql.QSqlField("lang", QtCore.QVariant.String)
-            listid = 1
-            f0.clear()
-            f1.setValue(QtCore.QVariant(iid))
-            f2.setValue(QtCore.QVariant(listid))
-            f3.setValue(QtCore.QVariant(st))
-            f4.setValue(QtCore.QVariant(lang))
-            record.append(f0)
-            record.append(f1)
-            record.append(f2)
-            record.append(f3)
-            record.append(f4)
-            self.model.insertRecord(-1, record)
-            self.adjustHeader()
-        except ValueError:
-            print "an invalid sentence, we ignore it"
-
-    def insertById(self):
-        id = self.ui.comboBox.currentText().toInt()
-        if id[1]:
-            sentence = st.getSentenceById(id[0])
-        else:
-            return
-        self.insertRecord(sentence)
-
+    # involving sentence
     def insertByRegrex(self):
         regex = self.ui.comboBox.currentText();
         if regex[1]:
@@ -68,31 +32,47 @@ class MainWindow(QMainWindow):
         else:
             return
         for sentence in sentences.split("\n"):
-            self.insertRecord(sentence)
+            st.insertRecord(self, sentence, self.model,-1, 'f')
+        self.adjustHeader()
 
-    def insertByRegrexTemp(self):
-        print self.model.insertRow(1,QtCore.QModelIndex())
-        
+    def insertTrById(self):
+        selection = self.table.selectionModel().selectedRows(0)
+        if len(selection) == 0:
+            QtGui.QMessageBox.information(self, self.tr("Go to Tatoeba"),
+                                          self.tr("You must select one sentence!"))
+        else:
+            stIndex = selection[0]
+            row = stIndex.row()
+            iid = stIndex.sibling(row, 1).data().toString()
+            print row
+            sentences = st.getTranslationById(iid)
+            for sentence in sentences.split("\n"):
+                st.insertRecord(self, sentence, self.model, row, 't')
+        self.adjustHeader()
 
+    # involving MVC
     def initializeModel(self):
         self.model.setTable('sentences')
         self.model.setRelation(2, QtSql.QSqlRelation("list","id","name"))
 
-        self.model.setEditStrategy(QtSql.QSqlTableModel.OnRowChange)
+        self.model.setEditStrategy(QtSql.QSqlTableModel.OnFieldChange)
         self.model.select()
         self.model.setHeaderData(1, QtCore.Qt.Horizontal, "ID")
         self.model.setHeaderData(2, QtCore.Qt.Horizontal, "List")
         self.model.setHeaderData(3, QtCore.Qt.Horizontal, "Sentence")
         self.model.setHeaderData(4, QtCore.Qt.Horizontal, "Language")
 
-
     def createTableView(self):
         view = self.ui.tableView
         view.setModel(self.model)
         view.setShowGrid(False)
-        view.verticalHeader().hide()
+        #view.verticalHeader().hide()
         view.setAlternatingRowColors(True)
         view.hideColumn(0)
+        view.hideColumn(5)
+        view.hideColumn(6)
+        view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows);
+        view.setSelectionMode(QtGui.QAbstractItemView.SingleSelection);
         return view
 
     def createListView(self):
@@ -103,30 +83,58 @@ class MainWindow(QMainWindow):
         return list
 
     def adjustHeader(self):
-        self.table.horizontalHeader().setResizeMode(3, QHeaderView.Stretch);
-        self.table.resizeColumnToContents(1);
+        self.table.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
+        self.table.resizeColumnToContents(1)
+        self.model.sort(5, QtCore.Qt.AscendingOrder)
 
+
+    # involving menu entry
     def createMenuBar(self):
-        deleteAction = QAction(self.tr("&Delete Sentence..."), self);	
-        deleteListAction = QAction(self.tr("&Delete List..."), self);
-        quitAction = QAction(self.tr("&Quit"), self);
-        aboutAction = QAction(self.tr("&About"), self);
-        gotoTatoebaAction = QAction(self.tr("&Go to Tatoeba"), self);
-        preferenceAction = QAction(self.tr("&Preference"), self);
+        deleteListAction = QAction(self.tr("&Delete List..."), self)
+        quitAction = QAction(self.tr("&Quit"), self)
+        aboutAction = QAction(self.tr("&About"), self)
+        aboutTatoebaAction = QAction(self.tr("About Tatoeba"), self)
+        preferenceAction = QAction(self.tr("&Preference"), self)
 
-        deleteAction.setShortcut(self.tr("Ctrl+D"));
-        quitAction.setShortcuts(QtGui.QKeySequence.Quit);
+        quitAction.setShortcuts(QtGui.QKeySequence.Quit)
 
-        listMenu = self.ui.menubar.addMenu(self.tr("&Lists"));
-        listMenu.addAction(deleteListAction);
-        listMenu.addSeparator();
-        listMenu.addAction(preferenceAction);
-        listMenu.addSeparator();
-        listMenu.addAction(quitAction);
+        listMenu = self.ui.menubar.addMenu(self.tr("&Lists"))
+        listMenu.addAction(deleteListAction)
+        listMenu.addSeparator()
+        listMenu.addAction(preferenceAction)
+        listMenu.addSeparator()
+        listMenu.addAction(quitAction)
 
-        stMenu = self.ui.menubar.addMenu(self.tr("&Sentence"));
-        stMenu.addAction(deleteAction);
+        stMenu = self.ui.menubar.addMenu(self.tr("&Sentence"))
+        getTrAction = QAction(self.tr("Get &Translations"), self)
+        stMenu.addAction(getTrAction)
+        gotoTatoebaAction = QAction(self.tr("&Go to Tatoeba"), self)
         stMenu.addAction(gotoTatoebaAction)
+        deleteAction = QAction(self.tr("&Delete Sentence..."), self)
+        stMenu.addAction(deleteAction)
+
+        deleteAction.setShortcut(self.tr("Ctrl+D"))
+        gotoTatoebaAction.setShortcut(self.tr("Ctrl+G"))
+        getTrAction.setShortcut(self.tr("Ctrl+T"))
     
-        helpMenu = self.ui.menubar.addMenu(self.tr("&Help"));
-        helpMenu.addAction(aboutAction);
+        helpMenu = self.ui.menubar.addMenu(self.tr("&Help"))
+        helpMenu.addAction(aboutAction)
+        helpMenu.addAction(aboutTatoebaAction)
+
+        gotoTatoebaAction.triggered.connect(self.gotoTatoeba)
+        getTrAction.triggered.connect(self.insertTrById)
+        aboutTatoebaAction.triggered.connect(self.aboutTatoeba)
+
+    def gotoTatoeba(self):
+        selection = self.table.selectionModel().selectedRows(0)
+        if len(selection) == 0:
+            QtGui.QMessageBox.information(self, self.tr("Go to Tatoeba"),
+                                          self.tr("You must select one sentence!"))
+        else:
+            stIndex = selection[0]
+            iid = stIndex.sibling(stIndex.row(), 1).data().toString()
+            url = QtCore.QUrl("http://tatoeba.org/eng/sentences/show/" + iid)
+            QDesktopServices.openUrl(url)
+
+    def aboutTatoeba(self):
+        QDesktopServices.openUrl(QtCore.QUrl("http://tatoeba.org"))
