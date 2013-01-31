@@ -24,7 +24,6 @@ def getSentencesByRegex(regex):
     sentences = unicode(
         check_output([parser, show_id, show_lang, "-r", str(regexUTF8)]),
         'utf-8')
-    print sentences
     return sentences
 
 if __name__=="__main__":
