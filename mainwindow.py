@@ -4,6 +4,7 @@ from PyQt4 import QtSql,QtCore
 from ui_mainwindow import *
 import connection
 import sentence as st
+from delegate import *
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,9 +22,12 @@ class MainWindow(QMainWindow):
         self.createMenuBar()
 
         # signals and slots
-        self.ui.goButton.clicked.connect(self.insertByRegrex)
+        self.ui.goButton.clicked.connect(self.test)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegrex)
 
+    def test(self):
+        print self.model.setData(self.model.index(0,1,QtCore.QModelIndex() ), QtGui.QColor("#00ff00"), QtCore.Qt.DecorationRole)
+        
     # involving sentence
     def insertByRegrex(self):
         regex = self.ui.comboBox.currentText();
@@ -73,6 +77,8 @@ class MainWindow(QMainWindow):
         view.hideColumn(6)
         view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows);
         view.setSelectionMode(QtGui.QAbstractItemView.SingleSelection);
+        iconDelegate = IconDelegate()
+        view.setItemDelegateForColumn(4, iconDelegate)
         return view
 
     def createListView(self):
