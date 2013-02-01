@@ -1,4 +1,4 @@
-# -*- coding = utf-8 -*-
+#!/usr/bin/env python
 import sys
 from PyQt4.QtGui import QApplication, QMainWindow
 from mainwindow import *

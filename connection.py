@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 from PyQt4 import QtSql, QtGui
 import sys
 import sentence as st

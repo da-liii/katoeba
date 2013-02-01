@@ -22,12 +22,9 @@ class MainWindow(QMainWindow):
         self.createMenuBar()
 
         # signals and slots
-        self.ui.goButton.clicked.connect(self.test)
+        self.ui.goButton.clicked.connect(self.insertByRegrex)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegrex)
 
-    def test(self):
-        print self.model.setData(self.model.index(0,1,QtCore.QModelIndex() ), QtGui.QColor("#00ff00"), QtCore.Qt.DecorationRole)
-        
     # involving sentence
     def insertByRegrex(self):
         regex = self.ui.comboBox.currentText();
@@ -82,11 +79,12 @@ class MainWindow(QMainWindow):
         return view
 
     def createListView(self):
-        list = self.ui.listView
-        list.setModel(self.model.relationModel(2))
-        list.setModelColumn(1)
-        list.setAlternatingRowColors(True)
-        return list
+        llist = self.ui.listView
+        llist.setModel(self.model.relationModel(2))
+        llist.setModelColumn(1)
+        llist.setAlternatingRowColors(True)
+        llist.clicked.connect(self.showList)
+        return llist
 
     def adjustHeader(self):
         self.table.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
@@ -96,7 +94,6 @@ class MainWindow(QMainWindow):
 
     # involving menu entry
     def createMenuBar(self):
-        deleteListAction = QAction(self.tr("&Delete List..."), self)
         quitAction = QAction(self.tr("&Quit"), self)
         aboutAction = QAction(self.tr("&About"), self)
         aboutTatoebaAction = QAction(self.tr("About Tatoeba"), self)
@@ -105,19 +102,32 @@ class MainWindow(QMainWindow):
         quitAction.setShortcuts(QtGui.QKeySequence.Quit)
 
         listMenu = self.ui.menubar.addMenu(self.tr("&Lists"))
+
+        deleteListAction = QAction(self.tr("&Delete List..."), self)
         listMenu.addAction(deleteListAction)
+        deleteListAction.triggered.connect(self.deleteList)
+
+        clearListAction = QAction(self.tr("C&lear List"), self)
+        listMenu.addAction(clearListAction)
+        clearListAction.setShortcut(self.tr("Ctrl+L"))
+        clearListAction.triggered.connect(self.deleteAllSentence)
+
         listMenu.addSeparator()
         listMenu.addAction(preferenceAction)
         listMenu.addSeparator()
         listMenu.addAction(quitAction)
 
-        stMenu = self.ui.menubar.addMenu(self.tr("&Sentence"))
+        stMenu = self.ui.menubar.addMenu(self.tr("&Sentences"))
         getTrAction = QAction(self.tr("Get &Translations"), self)
         stMenu.addAction(getTrAction)
+
         gotoTatoebaAction = QAction(self.tr("&Go to Tatoeba"), self)
         stMenu.addAction(gotoTatoebaAction)
+        gotoTatoebaAction.triggered.connect(self.gotoTatoeba)
+
         deleteAction = QAction(self.tr("&Delete Sentence..."), self)
         stMenu.addAction(deleteAction)
+        deleteAction.triggered.connect(self.deleteSentence)
 
         deleteAction.setShortcut(self.tr("Ctrl+D"))
         gotoTatoebaAction.setShortcut(self.tr("Ctrl+G"))
@@ -127,10 +137,32 @@ class MainWindow(QMainWindow):
         helpMenu.addAction(aboutAction)
         helpMenu.addAction(aboutTatoebaAction)
 
-        gotoTatoebaAction.triggered.connect(self.gotoTatoeba)
         getTrAction.triggered.connect(self.insertTrById)
         aboutTatoebaAction.triggered.connect(self.aboutTatoeba)
 
+    # list menu
+    def showList(self, index):
+        row = index.row()
+        if row >= 0:
+            pindex = self.model.relationModel(2).index(row, 0)
+            self.model.setFilter(QtCore.QString("listid = " + pindex.data().toString()))
+        else:
+            print "unexpected in mainwindow showList"
+
+
+    def deleteAllSentence(self):
+        self.model.removeRows(0, self.model.rowCount())
+
+    def deleteList(self):
+        index = self.list.selectionModel().currentIndex()
+        row = index.row()
+        if row >= 0:
+            self.deleteAllSentence()
+            self.model.relationModel(2).removeRow(row)
+        else:
+            print "unexpected in mainwindow deleteList"
+
+    # sentence menu
     def gotoTatoeba(self):
         selection = self.table.selectionModel().selectedRows(0)
         if len(selection) == 0:
@@ -141,6 +173,18 @@ class MainWindow(QMainWindow):
             iid = stIndex.sibling(stIndex.row(), 1).data().toString()
             url = QtCore.QUrl("http://tatoeba.org/eng/sentences/show/" + iid)
             QDesktopServices.openUrl(url)
+
+    def deleteSentence(self):
+        selection = self.table.selectionModel().selectedRows(0)
+        
+        if len(selection) == 0:
+            QtGui.QMessageBox.information(self, self.tr("Delete Sentence From Table"),
+                                          self.tr("You must select one sentence!"))
+        else:
+            stIndex = selection[0]
+            row = stIndex.row()
+            self.model.removeRow(row)
+            self.adjustHeader()
 
     def aboutTatoeba(self):
         QDesktopServices.openUrl(QtCore.QUrl("http://tatoeba.org"))
