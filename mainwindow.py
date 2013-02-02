@@ -27,16 +27,28 @@ class MainWindow(QMainWindow):
 
     # involving sentence
     def insertByRegrex(self):
+        index = self.list.selectionModel().currentIndex()
+        lrow = index.row()
+        pindex = self.model.relationModel(2).index(lrow, 0)
+        listid, test = pindex.data().toInt()
+        if test == False:
+            print "insertByRegrex failed"
         regex = self.ui.comboBox.currentText();
         if regex[1]:
             sentences = st.getSentencesByRegex(regex)
         else:
             return
         for sentence in sentences.split("\n"):
-            st.insertRecord(self, sentence, self.model,-1, 'f')
+            st.insertRecord(self, sentence, self.model,-1, 'f', listid)
         self.adjustHeader()
 
     def insertTrById(self):
+        index = self.list.selectionModel().currentIndex()
+        lrow = index.row()
+        pindex = self.model.relationModel(2).index(lrow, 0)
+        listid, test = pindex.data().toInt()
+        if test == False:
+            print "insertTrById failed"
         selection = self.table.selectionModel().selectedRows(0)
         if len(selection) == 0:
             QtGui.QMessageBox.information(self, self.tr("Go to Tatoeba"),
@@ -48,7 +60,7 @@ class MainWindow(QMainWindow):
             print row
             sentences = st.getTranslationById(iid)
             for sentence in sentences.split("\n"):
-                st.insertRecord(self, sentence, self.model, row, 't')
+                st.insertRecord(self, sentence, self.model, row, 't', listid)
         self.adjustHeader()
 
     # involving MVC
@@ -84,6 +96,7 @@ class MainWindow(QMainWindow):
         llist.setModelColumn(1)
         llist.setAlternatingRowColors(True)
         llist.clicked.connect(self.showList)
+        llist.setCurrentIndex(self.model.relationModel(2).index(0,0))
         return llist
 
     def adjustHeader(self):
@@ -103,7 +116,7 @@ class MainWindow(QMainWindow):
 
         listMenu = self.ui.menubar.addMenu(self.tr("&Lists"))
 
-        deleteListAction = QAction(self.tr("&Delete List..."), self)
+        deleteListAction = QAction(self.tr("&Delete List"), self)
         listMenu.addAction(deleteListAction)
         deleteListAction.triggered.connect(self.deleteList)
 
@@ -112,6 +125,10 @@ class MainWindow(QMainWindow):
         clearListAction.setShortcut(self.tr("Ctrl+L"))
         clearListAction.triggered.connect(self.deleteAllSentence)
 
+        addListAction = QAction(self.tr("&Add List"), self)
+        listMenu.addAction(addListAction)
+        addListAction.triggered.connect(self.addList)
+        
         listMenu.addSeparator()
         listMenu.addAction(preferenceAction)
         listMenu.addSeparator()
@@ -149,7 +166,22 @@ class MainWindow(QMainWindow):
         else:
             print "unexpected in mainwindow showList"
 
-
+    def addList(self):
+        record = QtSql.QSqlRecord()
+        f0 = QtSql.QSqlField("id", QtCore.QVariant.Int)
+        f1 = QtSql.QSqlField("name", QtCore.QVariant.String)
+        f2 = QtSql.QSqlField("number", QtCore.QVariant.Int)
+        f0.clear()
+        f1.setValue(QtCore.QVariant("New List"))
+        f2.setValue(QtCore.QVariant(0)) # will be used later
+        record.append(f0)
+        record.append(f1)
+        record.append(f2)
+        count = self.model.relationModel(2).rowCount()
+        self.model.relationModel(2).insertRecord(count, record)
+        self.ui.listView.setCurrentIndex(self.model.relationModel(2).index(count,0))
+        self.showList(self.ui.listView.currentIndex())
+        
     def deleteAllSentence(self):
         self.model.removeRows(0, self.model.rowCount())
 

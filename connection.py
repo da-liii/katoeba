@@ -14,25 +14,26 @@ class Data(object):
         self.query.exec_("PRAGMA locking_mode = EXCLUSIVE");
         self.query.exec_("PRAGMA synchronous = OFF");
 
-        self.query.exec_("create table list "
-                         "(id integer primary key autoincrement NOT NULL UNIQUE,"
-                         "name varchar(256),"
-                         "number int)")
-        self.query.exec_("insert into list (name, number) values('Starred',1)");
-        self.query.exec_("create table sentences "
-                         "(stid integer primary key autoincrement NOT NULL UNIQUE, "
-                         "tatoid int,"
-                         "listid int,"
-                         "sentence varchar(256),"
-                         "lang varchar(3),"
-                         "sortid int,"
-                         "tr varchar(1))"
-                         )
+        if self.db.tables().isEmpty():
+            self.query.exec_("create table list "
+                             "(id integer primary key autoincrement NOT NULL UNIQUE,"
+                             "name varchar(256),"
+                             "number int)")
+            self.query.exec_("insert into list (name, number) values('Temp', 0)")
+            self.query.exec_("create table sentences "
+                             "(stid integer primary key autoincrement NOT NULL UNIQUE, "
+                             "tatoid int,"
+                             "listid int,"
+                             "sentence varchar(256),"
+                             "lang varchar(3),"
+                             "sortid int,"
+                             "tr varchar(1))"
+                             )
 
     def createConnection(self):
-        db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-        db.setDatabaseName(':memory:')
-        if not db.open():
+        self.db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
+        self.db.setDatabaseName('tatoeba.db')
+        if not self.db.open():
             QtGui.QMessageBox.critical(None, QtGui.qApp.tr("Cannot open database"),
                                        QtGui.qApp.tr("Unable to establish a database connection.\n"
                                                      "This example needs SQLite support. Please read "

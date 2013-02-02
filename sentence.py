@@ -22,12 +22,13 @@ def getTranslationById(id):
 # support filters 
 def getSentencesByRegex(regex):
     regexUTF8 = regex.toUtf8()
+    regexUTF8 = ".*" + regexUTF8 + ".*"
     sentences = unicode(
         check_output([parser, show_id, show_lang, "-r", str(regexUTF8)]),
         'utf-8')
     return sentences
 
-def insertRecord(self, sentence, model, row, isTr):
+def insertRecord(self, sentence, model, row, isTr, listid):
     try:
         iid, lang, st = sentence.split("\t")
         record = QtSql.QSqlRecord()
@@ -38,7 +39,6 @@ def insertRecord(self, sentence, model, row, isTr):
         f4 = QtSql.QSqlField("lang", QtCore.QVariant.String)
         f5 = QtSql.QSqlField("sortid", QtCore.QVariant.Int)
         f6 = QtSql.QSqlField("tr", QtCore.QVariant.String)
-        listid = 1
         f0.clear()
         f1.setValue(QtCore.QVariant(iid))
         f2.setValue(QtCore.QVariant(listid))
