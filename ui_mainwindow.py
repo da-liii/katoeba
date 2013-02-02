@@ -8,6 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
+import view
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -69,7 +70,7 @@ class Ui_MainWindow(object):
         self.vLayout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
         self.vLayout.setMargin(0)
         self.vLayout.setObjectName(_fromUtf8("vLayout"))
-        self.listView = QtGui.QListView(self.layoutWidget)
+        self.listView = view.KListView(self.layoutWidget)
         font = QtGui.QFont()
         font.setFamily(_fromUtf8("Monospace"))
         font.setPointSize(12)
@@ -82,7 +83,7 @@ class Ui_MainWindow(object):
         self.commandLinkButton.setIcon(icon)
         self.commandLinkButton.setObjectName(_fromUtf8("commandLinkButton"))
         self.vLayout.addWidget(self.commandLinkButton)
-        self.tableView = QtGui.QTableView(self.splitter)
+        self.tableView = view.KTableView(self.splitter)
         font = QtGui.QFont()
         font.setFamily(_fromUtf8("Monospace"))
         self.tableView.setFont(font)

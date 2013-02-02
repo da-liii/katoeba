@@ -4,6 +4,7 @@ from PyQt4 import QtSql,QtCore
 from ui_mainwindow import *
 import connection
 import sentence as st
+import download as dw
 from delegate import *
 
 class MainWindow(QMainWindow):
@@ -13,6 +14,7 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 6)
+
 
         self.data = connection.Data()
         self.model = QtSql.QSqlRelationalTableModel(self)
@@ -26,6 +28,21 @@ class MainWindow(QMainWindow):
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegrex)
 
     # involving sentence
+    def insertById(self, number):
+        print "before insert ID"
+        index = self.list.selectionModel().currentIndex()
+        lrow = index.row()
+        pindex = self.model.relationModel(2).index(lrow, 0)
+        listid, test = pindex.data().toInt()
+        if test == False:
+            print "insertByRegrex failed"
+            return
+        sentences = st.getSentenceById(number)
+        for sentence in sentences.split("\n"):
+            st.insertRecord(self, sentence, self.model,-1, 'f', listid)
+            print sentence
+        self.adjustHeader()
+
     def insertByRegrex(self):
         index = self.list.selectionModel().currentIndex()
         lrow = index.row()
@@ -66,7 +83,7 @@ class MainWindow(QMainWindow):
     # involving MVC
     def initializeModel(self):
         self.model.setTable('sentences')
-        self.model.setRelation(2, QtSql.QSqlRelation("list","id","name"))
+        self.model.setRelation(2, QtSql.QSqlRelation("list","id","id"))
 
         self.model.setEditStrategy(QtSql.QSqlTableModel.OnFieldChange)
         self.model.select()
@@ -97,6 +114,7 @@ class MainWindow(QMainWindow):
         llist.setAlternatingRowColors(True)
         llist.clicked.connect(self.showList)
         llist.setCurrentIndex(self.model.relationModel(2).index(0,0))
+        self.adjustHeader()
         return llist
 
     def adjustHeader(self):
@@ -116,6 +134,10 @@ class MainWindow(QMainWindow):
 
         listMenu = self.ui.menubar.addMenu(self.tr("&Lists"))
 
+        addListAction = QAction(self.tr("&Add List"), self)
+        listMenu.addAction(addListAction)
+        addListAction.triggered.connect(self.addList)
+
         deleteListAction = QAction(self.tr("&Delete List"), self)
         listMenu.addAction(deleteListAction)
         deleteListAction.triggered.connect(self.deleteList)
@@ -125,10 +147,10 @@ class MainWindow(QMainWindow):
         clearListAction.setShortcut(self.tr("Ctrl+L"))
         clearListAction.triggered.connect(self.deleteAllSentence)
 
-        addListAction = QAction(self.tr("&Add List"), self)
-        listMenu.addAction(addListAction)
-        addListAction.triggered.connect(self.addList)
-        
+        downloadListAction = QAction(self.tr("Download List"), self)
+        listMenu.addAction(downloadListAction)
+        downloadListAction.triggered.connect(self.startDownloadList)
+
         listMenu.addSeparator()
         listMenu.addAction(preferenceAction)
         listMenu.addSeparator()
@@ -194,6 +216,19 @@ class MainWindow(QMainWindow):
         else:
             print "unexpected in mainwindow deleteList"
 
+    def startDownloadList(self):
+        number = raw_input("==> ")
+        self.downloader = dw.Downloader(number)
+        self.downloader.start()
+        self.downloader.finished.connect(self.downloadList)
+        QtCore.QObject.connect(self.downloader, QtCore.SIGNAL('output(PyQt_PyObject)'), self.downloadList)
+
+    def downloadList(self, nums):
+        print nums
+        for num in nums:
+            print num
+            self.insertById(num)
+        
     # sentence menu
     def gotoTatoeba(self):
         selection = self.table.selectionModel().selectedRows(0)
