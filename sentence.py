@@ -7,16 +7,29 @@ parser = "tatoparser"
 show_id = "--display-ids"
 show_lang = "--display-lang"
 
-def getSentenceById(id):
-    sentence = unicode(
-        check_output([parser, show_id, show_lang, "--has-id", str(id)]),
-        'utf-8')
-    return sentence
+class Sentence(QtCore.QThread):
+    def __init__(self, ddict):
+        super(Sentence, self).__init__()
+        self.dict = ddict
 
+    def run(self):
+        st = self.getSentence()
+        self.emit(QtCore.SIGNAL("output(PyQt_PyObject)"), st)
+
+    def getSentence(self):
+        print self.dict
+        key = self.dict.keys()[-1]
+        value = self.dict[key]
+        sentence = unicode(
+            check_output([parser, show_id, show_lang, key, value]),
+            'utf-8').rstrip("\n")
+        print "in Sentence",sentence
+        return sentence
+        
 def getTranslationById(id):
     sentences = unicode(
         check_output([parser, show_id, show_lang, "--is-linked-to", str(id)]), 
-        'utf-8')
+        'utf-8').rstrip("\n")
     return sentences
 
 # support filters 
@@ -25,7 +38,7 @@ def getSentencesByRegex(regex):
     regexUTF8 = ".*" + regexUTF8 + ".*"
     sentences = unicode(
         check_output([parser, show_id, show_lang, "-r", str(regexUTF8)]),
-        'utf-8')
+        'utf-8').rstrip("\n")
     return sentences
 
 def insertRecord(self, sentence, model, row, isTr, listid):
@@ -59,8 +72,3 @@ def insertRecord(self, sentence, model, row, isTr, listid):
         model.insertRecord(-1, record)
     except ValueError:
         print "an invalid sentence, we ignore it"
-
-
-if __name__=="__main__":
-    hello = ".*我们.*"
-    getSentencesByRegex(hello)

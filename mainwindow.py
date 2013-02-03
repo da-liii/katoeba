@@ -2,6 +2,7 @@ import sys
 from PyQt4.QtGui import QMainWindow, QHeaderView, QAction, QDesktopServices
 from PyQt4 import QtSql,QtCore
 from ui_mainwindow import *
+from dialog import *
 import connection
 import sentence as st
 import download as dw
@@ -24,32 +25,38 @@ class MainWindow(QMainWindow):
         self.createMenuBar()
 
         # signals and slots
-        self.ui.goButton.clicked.connect(self.insertByRegrex)
-        self.ui.comboBox.currentIndexChanged.connect(self.insertByRegrex)
+        self.ui.goButton.clicked.connect(self.insertByRegex)
+        self.ui.comboBox.currentIndexChanged.connect(self.insertByRegex)
 
     # involving sentence
-    def insertById(self, number):
+    def startInsertById(self, number):
         print "before insert ID"
         index = self.list.selectionModel().currentIndex()
         lrow = index.row()
         pindex = self.model.relationModel(2).index(lrow, 0)
-        listid, test = pindex.data().toInt()
+        self.listid, test = pindex.data().toInt()
         if test == False:
-            print "insertByRegrex failed"
-            return
-        sentences = st.getSentenceById(number)
+            print "insertByRegex failed"
+        ddict = {}
+        ddict["--has-id"] = str(number)
+        self.sen = st.Sentence(ddict)
+        self.sen.start()
+        QtCore.QObject.connect(self.sen, QtCore.SIGNAL('output(PyQt_PyObject)'), self.insertById)
+        self.sen.wait()
+
+    def insertById(self, sentences):
         for sentence in sentences.split("\n"):
-            st.insertRecord(self, sentence, self.model,-1, 'f', listid)
-            print sentence
+            st.insertRecord(self, sentence, self.model,-1, 'f', self.listid)
+            print "inserted,",sentence
         self.adjustHeader()
 
-    def insertByRegrex(self):
+    def insertByRegex(self):
         index = self.list.selectionModel().currentIndex()
         lrow = index.row()
         pindex = self.model.relationModel(2).index(lrow, 0)
         listid, test = pindex.data().toInt()
         if test == False:
-            print "insertByRegrex failed"
+            print "insertByRegex failed"
         regex = self.ui.comboBox.currentText();
         if regex[1]:
             sentences = st.getSentencesByRegex(regex)
@@ -217,18 +224,23 @@ class MainWindow(QMainWindow):
             print "unexpected in mainwindow deleteList"
 
     def startDownloadList(self):
-        number = raw_input("==> ")
+        dialog = Dialog()
+        if dialog.exec_() == 1:
+            number = dialog.ui.lineEdit.text()
+        else:
+            return
+        number = str(number.toInt())
         self.downloader = dw.Downloader(number)
         self.downloader.start()
-        self.downloader.finished.connect(self.downloadList)
         QtCore.QObject.connect(self.downloader, QtCore.SIGNAL('output(PyQt_PyObject)'), self.downloadList)
+
 
     def downloadList(self, nums):
         print nums
         for num in nums:
             print num
-            self.insertById(num)
-        
+            self.startInsertById(num)
+
     # sentence menu
     def gotoTatoeba(self):
         selection = self.table.selectionModel().selectedRows(0)
