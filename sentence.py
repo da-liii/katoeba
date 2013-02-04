@@ -8,41 +8,40 @@ show_id = "--display-ids"
 show_lang = "--display-lang"
 
 class Sentence(QtCore.QThread):
-    def __init__(self, ddict):
+    def __init__(self, ddict, ui, model, rrow, llistid):
         super(Sentence, self).__init__()
         self.dict = ddict
+        self.model = model
+        self.row = rrow
+        self.listid = llistid
 
     def run(self):
-        st = self.getSentence()
-        self.emit(QtCore.SIGNAL("output(PyQt_PyObject)"), st)
+        if self.listid == -1:
+            print "cannot get listid, should be an exception"
+            return 
+        self.insertSentence()
 
-    def getSentence(self):
+    def insertSentence(self):
         print self.dict
+        isTr = 'f'
         key = self.dict.keys()[-1]
         value = self.dict[key]
-        sentence = unicode(
-            check_output([parser, show_id, show_lang, key, value]),
-            'utf-8').rstrip("\n")
-        print "in Sentence",sentence
-        return sentence
+        if key == '-r':
+            lvalue = str('.*' + value.toUtf8() + '.*')
+        else:
+            lvalue = value
         
-def getTranslationById(id):
-    sentences = unicode(
-        check_output([parser, show_id, show_lang, "--is-linked-to", str(id)]), 
-        'utf-8').rstrip("\n")
-    return sentences
+        if key == '--is-linked-to':
+            isTr = 't'
+        sentences = unicode(
+            check_output([parser, show_id, show_lang, key, lvalue]),
+            'utf-8').rstrip("\n")
+        for st in sentences.split("\n"):
+            self.insertRecord(st, isTr)
+            print "inserted", st
 
-# support filters 
-def getSentencesByRegex(regex):
-    regexUTF8 = regex.toUtf8()
-    regexUTF8 = ".*" + regexUTF8 + ".*"
-    sentences = unicode(
-        check_output([parser, show_id, show_lang, "-r", str(regexUTF8)]),
-        'utf-8').rstrip("\n")
-    return sentences
 
-def insertRecord(self, sentence, model, row, isTr, listid):
-    try:
+    def insertRecord(self, sentence, isTr):
         iid, lang, st = sentence.split("\t")
         record = QtSql.QSqlRecord()
         f0 = QtSql.QSqlField("stid", QtCore.QVariant.Int)
@@ -54,13 +53,13 @@ def insertRecord(self, sentence, model, row, isTr, listid):
         f6 = QtSql.QSqlField("tr", QtCore.QVariant.String)
         f0.clear()
         f1.setValue(QtCore.QVariant(iid))
-        f2.setValue(QtCore.QVariant(listid))
+        f2.setValue(QtCore.QVariant(self.listid))
         f3.setValue(QtCore.QVariant(st))
         f4.setValue(QtCore.QVariant(lang))
-        if row == -1:
-            f5.setValue(QtCore.QVariant(model.rowCount()*10))
+        if self.row == -1:
+            f5.setValue(QtCore.QVariant(self.model.rowCount()*10))
         else:
-            f5.setValue(QtCore.QVariant(row*10+1))
+            f5.setValue(QtCore.QVariant(self.row*10+1))
         f6.setValue(QtCore.QVariant(isTr))
         record.append(f0)
         record.append(f1)
@@ -69,6 +68,5 @@ def insertRecord(self, sentence, model, row, isTr, listid):
         record.append(f4)
         record.append(f5)
         record.append(f6)
-        model.insertRecord(-1, record)
-    except ValueError:
-        print "an invalid sentence, we ignore it"
+        print "bug", self.listid, iid
+        self.model.insertRecord(-1, record)

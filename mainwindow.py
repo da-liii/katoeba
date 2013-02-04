@@ -16,7 +16,6 @@ class MainWindow(QMainWindow):
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 6)
 
-
         self.data = connection.Data()
         self.model = QtSql.QSqlRelationalTableModel(self)
         self.initializeModel()
@@ -25,54 +24,47 @@ class MainWindow(QMainWindow):
         self.createMenuBar()
 
         # signals and slots
-        self.ui.goButton.clicked.connect(self.insertByRegex)
+        self.ui.goButton.clicked.connect(self.test)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegex)
 
-    # involving sentence
-    def startInsertById(self, number):
-        print "before insert ID"
-        index = self.list.selectionModel().currentIndex()
-        lrow = index.row()
-        pindex = self.model.relationModel(2).index(lrow, 0)
-        self.listid, test = pindex.data().toInt()
-        if test == False:
-            print "insertByRegex failed"
-        ddict = {}
-        ddict["--has-id"] = str(number)
-        self.sen = st.Sentence(ddict)
-        self.sen.start()
-        QtCore.QObject.connect(self.sen, QtCore.SIGNAL('output(PyQt_PyObject)'), self.insertById)
-        self.sen.wait()
+    def test(self):
+        self.insertById(12)
 
-    def insertById(self, sentences):
-        for sentence in sentences.split("\n"):
-            st.insertRecord(self, sentence, self.model,-1, 'f', self.listid)
-            print "inserted,",sentence
-        self.adjustHeader()
-
-    def insertByRegex(self):
+    def getListId(self):
         index = self.list.selectionModel().currentIndex()
         lrow = index.row()
         pindex = self.model.relationModel(2).index(lrow, 0)
         listid, test = pindex.data().toInt()
-        if test == False:
-            print "insertByRegex failed"
+        if test:
+            return listid
+        else:
+            return -1
+
+    # involving sentence
+    def insertById(self, number):
+        listid = self.getListId()
+        ddict = {}
+        ddict["--has-id"] = str(number)
+        sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
+        sen.start()
+        sen.wait()
+        
+
+    def insertByRegex(self): 
+        listid = self.getListId()
         regex = self.ui.comboBox.currentText();
-        if regex[1]:
-            sentences = st.getSentencesByRegex(regex)
+        if len(regex) > 1:
+            ddict = {}
+            ddict["-r"] = regex
+            sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
+            sen.start()
+            sen.wait()
         else:
             return
-        for sentence in sentences.split("\n"):
-            st.insertRecord(self, sentence, self.model,-1, 'f', listid)
         self.adjustHeader()
 
     def insertTrById(self):
-        index = self.list.selectionModel().currentIndex()
-        lrow = index.row()
-        pindex = self.model.relationModel(2).index(lrow, 0)
-        listid, test = pindex.data().toInt()
-        if test == False:
-            print "insertTrById failed"
+        listid = self.getListId()
         selection = self.table.selectionModel().selectedRows(0)
         if len(selection) == 0:
             QtGui.QMessageBox.information(self, self.tr("Go to Tatoeba"),
@@ -82,9 +74,11 @@ class MainWindow(QMainWindow):
             row = stIndex.row()
             iid = stIndex.sibling(row, 1).data().toString()
             print row
-            sentences = st.getTranslationById(iid)
-            for sentence in sentences.split("\n"):
-                st.insertRecord(self, sentence, self.model, row, 't', listid)
+            ddict = {}
+            ddict["--is-linked-to"] = iid
+            sen = st.Sentence(ddict, self.ui, self.model, row, listid)
+            sen.start()
+            sen.wait
         self.adjustHeader()
 
     # involving MVC
@@ -239,7 +233,7 @@ class MainWindow(QMainWindow):
         print nums
         for num in nums:
             print num
-            self.startInsertById(num)
+            self.insertById(num)
 
     # sentence menu
     def gotoTatoeba(self):
