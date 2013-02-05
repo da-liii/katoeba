@@ -24,7 +24,17 @@
     <item>
      <layout class="QVBoxLayout" name="verticalLayout" stretch="1,10">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout" stretch="30,2">
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,8,20,2,8,4">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>From:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="fromBox"/>
+        </item>
         <item>
          <widget class="QComboBox" name="comboBox">
           <property name="sizePolicy">
@@ -40,6 +50,16 @@
            <number>3</number>
           </property>
          </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>To:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="toBox"/>
         </item>
         <item>
          <widget class="QPushButton" name="goButton">

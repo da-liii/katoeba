@@ -1,5 +1,6 @@
 from PyQt4.QtGui import QStyledItemDelegate, QSpinBox, QPixmap, qApp, QStyle, QLineEdit
 from PyQt4.QtCore import QVariant, Qt
+from PyQt4 import QtCore, QtGui
 
 class Delegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
@@ -20,6 +21,11 @@ class Delegate(QStyledItemDelegate):
             sbox = QSpinBox(parent)
             sbox.setRange(1,100) # 100 is a magic number
             return sbox
+        elif col == 1:
+            editor = QLineEdit(parent)
+            regExp = QtCore.QRegExp("[tri]")
+            editor.setValidator(QtGui.QRegExpValidator(regExp, parent))
+            return editor
         else:
             return QLineEdit(parent)
 

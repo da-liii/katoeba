@@ -11,7 +11,7 @@ class Downloader(QtCore.QThread):
     def run(self):
         page = self.getList(self.number)
         self.emit(QtCore.SIGNAL("output(PyQt_PyObject)"), page)
-        
+
     def getList(self, number):
         url = "http://tatoeba.org/eng/sentences_lists/show/" + number
         content = urllib2.urlopen(url).read()
@@ -28,7 +28,7 @@ class Downloader(QtCore.QThread):
         for i in range(2, npage+1, 1):
             lurl = url + "/page:" + str(i)
             print lurl
-            time.sleep(1)
+            time.sleep(4)
             content = urllib2.urlopen(lurl).read()
             result = re.findall(r'sentences_group_\d+', content)  
             for each in result:

@@ -2,13 +2,12 @@
 
 # Form implementation generated from reading ui file 'ui.ui'
 #
-# Created: Mon Jan 28 16:55:17 2013
+# Created: Tue Feb  5 16:54:06 2013
 #      by: PyQt4 UI code generator 4.9.6
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
-import view
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -38,6 +37,12 @@ class Ui_MainWindow(object):
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.label = QtGui.QLabel(self.centralwidget)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.horizontalLayout.addWidget(self.label)
+        self.fromBox = QtGui.QComboBox(self.centralwidget)
+        self.fromBox.setObjectName(_fromUtf8("fromBox"))
+        self.horizontalLayout.addWidget(self.fromBox)
         self.comboBox = QtGui.QComboBox(self.centralwidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -48,6 +53,12 @@ class Ui_MainWindow(object):
         self.comboBox.setMinimumContentsLength(3)
         self.comboBox.setObjectName(_fromUtf8("comboBox"))
         self.horizontalLayout.addWidget(self.comboBox)
+        self.label_2 = QtGui.QLabel(self.centralwidget)
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.horizontalLayout.addWidget(self.label_2)
+        self.toBox = QtGui.QComboBox(self.centralwidget)
+        self.toBox.setObjectName(_fromUtf8("toBox"))
+        self.horizontalLayout.addWidget(self.toBox)
         self.goButton = QtGui.QPushButton(self.centralwidget)
         font = QtGui.QFont()
         font.setFamily(_fromUtf8("Monospace"))
@@ -56,8 +67,12 @@ class Ui_MainWindow(object):
         self.goButton.setStyleSheet(_fromUtf8(""))
         self.goButton.setObjectName(_fromUtf8("goButton"))
         self.horizontalLayout.addWidget(self.goButton)
-        self.horizontalLayout.setStretch(0, 30)
-        self.horizontalLayout.setStretch(1, 2)
+        self.horizontalLayout.setStretch(0, 2)
+        self.horizontalLayout.setStretch(1, 8)
+        self.horizontalLayout.setStretch(2, 20)
+        self.horizontalLayout.setStretch(3, 2)
+        self.horizontalLayout.setStretch(4, 8)
+        self.horizontalLayout.setStretch(5, 4)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.splitter = QtGui.QSplitter(self.centralwidget)
         self.splitter.setOrientation(QtCore.Qt.Horizontal)
@@ -70,7 +85,7 @@ class Ui_MainWindow(object):
         self.vLayout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
         self.vLayout.setMargin(0)
         self.vLayout.setObjectName(_fromUtf8("vLayout"))
-        self.listView = view.KListView(self.layoutWidget)
+        self.listView = QtGui.QListView(self.layoutWidget)
         font = QtGui.QFont()
         font.setFamily(_fromUtf8("Monospace"))
         font.setPointSize(12)
@@ -83,7 +98,7 @@ class Ui_MainWindow(object):
         self.commandLinkButton.setIcon(icon)
         self.commandLinkButton.setObjectName(_fromUtf8("commandLinkButton"))
         self.vLayout.addWidget(self.commandLinkButton)
-        self.tableView = view.KTableView(self.splitter)
+        self.tableView = QtGui.QTableView(self.splitter)
         font = QtGui.QFont()
         font.setFamily(_fromUtf8("Monospace"))
         self.tableView.setFont(font)
@@ -112,6 +127,8 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        self.label.setText(_translate("MainWindow", "From:", None))
+        self.label_2.setText(_translate("MainWindow", "To:", None))
         self.goButton.setText(_translate("MainWindow", "Search", None))
         self.commandLinkButton.setText(_translate("MainWindow", "Check for updates", None))
         self.action_About.setText(_translate("MainWindow", "&About", None))

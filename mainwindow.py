@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 from PyQt4.QtGui import QMainWindow, QHeaderView, QAction, QDesktopServices
 from PyQt4 import QtSql,QtCore
@@ -7,15 +8,13 @@ import connection
 import sentence as st
 import download as dw
 from delegate import *
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.splitter.setStretchFactor(0, 1)
-        self.ui.splitter.setStretchFactor(1, 6)
-
+        self.ui.splitter.setStretchFactor(0, 10)
+        self.ui.splitter.setStretchFactor(1, 34)
         self.data = connection.Data()
         self.model = QtSql.QSqlRelationalTableModel(self)
         self.initializeModel()
@@ -26,6 +25,10 @@ class MainWindow(QMainWindow):
         # signals and slots
         self.ui.goButton.clicked.connect(self.insertByRegex)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegex)
+        lang = self.langDict()
+        for d in lang.keys():
+            self.ui.fromBox.addItem(lang[d])
+            self.ui.toBox.addItem(lang[d])
 
     def test(self):
         self.insertById(12)
@@ -40,6 +43,16 @@ class MainWindow(QMainWindow):
         else:
             return -1
 
+    def getSentenceIndex(self):
+        listid = self.getListId()
+        selection = self.table.selectionModel().selectedIndexes()
+        if len(selection) == 0:
+            QtGui.QMessageBox.information(self, self.tr("Which sentence?"),
+                                          self.tr("You must select one sentence!"))
+            return None
+        else:
+            return selection[0]
+
     # involving sentence
     def insertById(self, number):
         listid = self.getListId()
@@ -47,38 +60,33 @@ class MainWindow(QMainWindow):
         ddict["--has-id"] = str(number)
         sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
         sen.start()
+        self.ui.statusbar.showMessage("inserting "+ str(number))
         sen.wait()
-
 
     def insertByRegex(self):
         listid = self.getListId()
         regex = self.ui.comboBox.currentText();
         if len(regex) > 1:
             ddict = {}
-            ddict["-r"] = regex
+            ddict["-r"] = str('.*' + regex.toUtf8() + '.*')
             sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
             sen.start()
             sen.wait()
         else:
             return
-        self.filter()
 
     def insertTrById(self):
         listid = self.getListId()
-        selection = self.table.selectionModel().selectedRows(0)
-        if len(selection) == 0:
-            QtGui.QMessageBox.information(self, self.tr("Go to Tatoeba"),
-                                          self.tr("You must select one sentence!"))
-        else:
-            stIndex = selection[0]
-            row = stIndex.row()
-            iid = stIndex.sibling(row, 6).data().toString()
-            print row
-            ddict = {}
-            ddict["--is-linked-to"] = iid
-            sen = st.Sentence(ddict, self.ui, self.model, row, listid)
-            sen.start()
-            sen.wait
+        stIndex = self.getSentenceIndex()
+        if stIndex == None:
+            return
+        row = stIndex.row()
+        iid = stIndex.sibling(row, 6).data().toString()
+        ddict = {}
+        ddict["--is-linked-to"] = iid
+        sen = st.Sentence(ddict, self.ui, self.model, row, listid)
+        sen.start()
+        sen.wait()
         self.filter()
 
     # involving MVC
@@ -97,12 +105,12 @@ class MainWindow(QMainWindow):
         view = self.ui.tableView
         view.setModel(self.model)
         view.setShowGrid(False)
-        view.verticalHeader().hide()
+        #view.verticalHeader().hide()
         view.setAlternatingRowColors(True)
         view.hideColumn(0)
         view.hideColumn(5)
         view.hideColumn(6)
-        view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows);
+        view.setSelectionBehavior(QtGui.QAbstractItemView.SelectItems);
         view.setSelectionMode(QtGui.QAbstractItemView.SingleSelection);
         view.setItemDelegate(Delegate())
         view.setColumnWidth(1, 20)
@@ -223,7 +231,7 @@ class MainWindow(QMainWindow):
             number = dialog.ui.lineEdit.text()
         else:
             return
-        number = str(number.toInt())
+        number = str(number.toInt()[0])
         self.downloader = dw.Downloader(number)
         self.downloader.start()
         QtCore.QObject.connect(self.downloader, QtCore.SIGNAL('output(PyQt_PyObject)'), self.downloadList)
@@ -237,26 +245,142 @@ class MainWindow(QMainWindow):
 
     # sentence menu
     def gotoTatoeba(self):
-        selection = self.table.selectionModel().selectedRows(0)
-        if len(selection) == 0:
-            QtGui.QMessageBox.information(self, self.tr("Go to Tatoeba"),
-                                          self.tr("You must select one sentence!"))
-        else:
-            stIndex = selection[0]
-            iid = stIndex.sibling(stIndex.row(), 6).data().toString()
-            url = QtCore.QUrl("http://tatoeba.org/eng/sentences/show/" + iid)
-            QDesktopServices.openUrl(url)
+        stIndex = self.getSentenceIndex()
+        if stIndex == None:
+            return
+        iid = stIndex.sibling(stIndex.row(), 6).data().toString()
+        url = QtCore.QUrl("http://tatoeba.org/eng/sentences/show/" + iid)
+        QDesktopServices.openUrl(url)
 
     def deleteSentence(self):
-        selection = self.table.selectionModel().selectedRows(0)
-        if len(selection) == 0:
-            QtGui.QMessageBox.information(self, self.tr("Delete Sentence From Table"),
-                                          self.tr("You must select one sentence!"))
-        else:
-            stIndex = selection[0]
-            row = stIndex.row()
-            self.model.removeRow(row)
-            self.filter()
+        stIndex = self.getSentenceIndex()
+        if stIndex == None:
+            return
+        row = stIndex.row()
+        self.model.removeRow(row)
+        self.filter()
 
     def aboutTatoeba(self):
         QDesktopServices.openUrl(QtCore.QUrl("http://tatoeba.org"))
+
+    def langDict(self):
+        lang = {}
+        lang["afr"] = "Afrikaans"
+        lang["ain"] = "Ainu"
+        lang["sqi"] = "Albanian"
+        lang["ara"] = "Arabic"
+        lang["hye"] = "Armenian"
+        lang["ast"] = "Asturian"
+        lang["eus"] = "Basque"
+        lang["bel"] = "Belarusian"
+        lang["ben"] = "Bengali"
+        lang["ber"] = "Berber"
+        lang["bos"] = "Bosnian"
+        lang["bre"] = "Breton"
+        lang["bul"] = "Bulgarian"
+        lang["yue"] = "Cantonese"
+        lang["cat"] = "Catalan"
+        lang["cha"] = "Chamorro"
+        lang["cmn"] = "Chinese"
+        lang["hrv"] = "Croatian"
+        lang["cycl"] = "CycL"
+        lang["ces"] = "Czech"
+        lang["dan"] = "Danish"
+        lang["nld"] = "Dutch"
+        lang["arz"] = "Egyptian Arabic"
+        lang["eng"] = "English"
+        lang["epo"] = "Esperanto"
+        lang["est"] = "Estonian"
+        lang["ewe"] = "Ewe"
+        lang["fao"] = "Faroese"
+        lang["fin"] = "Finnish"
+        lang["fra"] = "French"
+        lang["fry"] = "Frisian"
+        lang["glg"] = "Galician"
+        lang["kat"] = "Georgian"
+        lang["deu"] = "German"
+        lang["grn"] = "Guarani"
+        lang["heb"] = "Hebrew"
+        lang["hin"] = "Hindi"
+        lang["hun"] = "Hungarian"
+        lang["isl"] = "Icelandic"
+        lang["ido"] = "Ido"
+        lang["ind"] = "Indonesian"
+        lang["ina"] = "Interlingua"
+        lang["ile"] = "Interlingue"
+        lang["acm"] = "Iraqi Arabic"
+        lang["gle"] = "Irish"
+        lang["ita"] = "Italian"
+        lang["jpn"] = "Japanese"
+        lang["xal"] = "Kalmyk"
+        lang["kaz"] = "Kazakh"
+        lang["tlh"] = "Klingon"
+        lang["kor"] = "Korean"
+        lang["avk"] = "Kotava"
+        lang["kur"] = "Kurdish"
+        lang["ksh"] = "Kölsch"
+        lang["lld"] = "Ladin"
+        lang["lad"] = "Ladino"
+        lang["lat"] = "Latin"
+        lang["lvs"] = "Latvian"
+        lang["lzh"] = "Literary Chinese"
+        lang["lit"] = "Lithuanian"
+        lang["jbo"] = "Lojban"
+        lang["nds"] = "Low Saxon"
+        lang["dsb"] = "Lower Sorbian"
+        lang["mlg"] = "Malagasy"
+        lang["zsm"] = "Malay"
+        lang["mal"] = "Malayalam"
+        lang["mri"] = "Maori"
+        lang["mar"] = "Marathi"
+        lang["ell"] = "Modern Greek"
+        lang["mon"] = "Mongolian"
+        lang["nob"] = "Norwegian (Bokmål)"
+        lang["non"] = "Norwegian (Nynorsk)"
+        lang["nov"] = "Novial"
+        lang["oci"] = "Occitan"
+        lang["orv"] = "Old East Slavic"
+        lang["ang"] = "Old English"
+        lang["tpw"] = "Old Tupi"
+        lang["oss"] = "Ossetian"
+        lang["pes"] = "Persian"
+        lang["pms"] = "Piemontese"
+        lang["pol"] = "Polish"
+        lang["por"] = "Portuguese"
+        lang["pnb"] = "Punjabi"
+        lang["que"] = "Quechua"
+        lang["qya"] = "Quenya"
+        lang["ron"] = "Romanian"
+        lang["roh"] = "Romansh"
+        lang["rus"] = "Russian"
+        lang["san"] = "Sanskrit"
+        lang["gla"] = "Scottish Gaelic"
+        lang["srp"] = "Serbian"
+        lang["wuu"] = "Shanghainese"
+        lang["scn"] = "Sicilian"
+        lang["sjn"] = "Sindarin"
+        lang["slk"] = "Slovak"
+        lang["slv"] = "Slovenian"
+        lang["spa"] = "Spanish"
+        lang["swh"] = "Swahili"
+        lang["swe"] = "Swedish"
+        lang["tgl"] = "Tagalog"
+        lang["tgk"] = "Tajik"
+        lang["tat"] = "Tatar"
+        lang["tel"] = "Telegu"
+        lang["nan"] = "Teochew"
+        lang["tha"] = "Thai"
+        lang["tpi"] = "Tok Pisin"
+        lang["toki"] = "Toki Pona"
+        lang["tur"] = "Turkish"
+        lang["ukr"] = "Ukrainian"
+        lang["hsb"] = "Upper Sorbian"
+        lang["urd"] = "Urdu"
+        lang["uig"] = "Uyghur"
+        lang["uzb"] = "Uzbek"
+        lang["vie"] = "Vietnamese"
+        lang["vol"] = "Volapük"
+        lang["cym"] = "Welsh"
+        lang["xho"] = "Xhosa"
+        lang["yid"] = "Yiddish"
+        return lang

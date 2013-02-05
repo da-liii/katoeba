@@ -1,7 +1,8 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
   <file>img/t.png</file>
-  <file>img/o.png</filey>
+  <file>img/r.png</file>
+  <file>img/i.png</file>
   <file>flag/acm.png</file>
   <file>flag/add.png</file>
   <file>flag/afr.png</file>
