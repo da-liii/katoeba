@@ -7,8 +7,8 @@ class Data(object):
         if self.createConnection() == False:
             sys.exit(1)
         self.query = QtSql.QSqlQuery()
-        self.query.exec_("PRAGMA page_size = 4096");    
-        self.query.exec_("PRAGMA cache_size = 16384");    
+        self.query.exec_("PRAGMA page_size = 4096");
+        self.query.exec_("PRAGMA cache_size = 16384")
         self.query.exec_("PRAGMA temp_store = MEMORY");
         self.query.exec_("PRAGMA journal_mode = OFF");
         self.query.exec_("PRAGMA locking_mode = EXCLUSIVE");
@@ -22,12 +22,12 @@ class Data(object):
             self.query.exec_("insert into list (name, number) values('Temp', 0)")
             self.query.exec_("create table sentences "
                              "(stid integer primary key autoincrement NOT NULL UNIQUE, "
-                             "tatoid int,"
+                             "tr varchar(3),"
                              "listid int,"
                              "sentence varchar(256),"
                              "lang varchar(3),"
                              "sortid int,"
-                             "tr varchar(1))"
+                             "tatoid int)"
                              )
 
     def createConnection(self):

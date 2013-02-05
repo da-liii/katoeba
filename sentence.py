@@ -18,19 +18,19 @@ class Sentence(QtCore.QThread):
     def run(self):
         if self.listid == -1:
             print "cannot get listid, should be an exception"
-            return 
+            return
         self.insertSentence()
 
     def insertSentence(self):
         print self.dict
-        isTr = 'f'
+        isTr = 'o'
         key = self.dict.keys()[-1]
         value = self.dict[key]
         if key == '-r':
             lvalue = str('.*' + value.toUtf8() + '.*')
         else:
             lvalue = value
-        
+
         if key == '--is-linked-to':
             isTr = 't'
         sentences = unicode(
@@ -40,19 +40,18 @@ class Sentence(QtCore.QThread):
             self.insertRecord(st, isTr)
             print "inserted", st
 
-
     def insertRecord(self, sentence, isTr):
         iid, lang, st = sentence.split("\t")
         record = QtSql.QSqlRecord()
         f0 = QtSql.QSqlField("stid", QtCore.QVariant.Int)
-        f1 = QtSql.QSqlField("tatoid", QtCore.QVariant.Int)
+        f1 = QtSql.QSqlField("tr", QtCore.QVariant.String)
         f2 = QtSql.QSqlField("listid", QtCore.QVariant.Int)
         f3 = QtSql.QSqlField("sentence", QtCore.QVariant.String)
         f4 = QtSql.QSqlField("lang", QtCore.QVariant.String)
         f5 = QtSql.QSqlField("sortid", QtCore.QVariant.Int)
-        f6 = QtSql.QSqlField("tr", QtCore.QVariant.String)
+        f6 = QtSql.QSqlField("tatoid", QtCore.QVariant.Int)
         f0.clear()
-        f1.setValue(QtCore.QVariant(iid))
+        f1.setValue(QtCore.QVariant(isTr))
         f2.setValue(QtCore.QVariant(self.listid))
         f3.setValue(QtCore.QVariant(st))
         f4.setValue(QtCore.QVariant(lang))
@@ -60,7 +59,7 @@ class Sentence(QtCore.QThread):
             f5.setValue(QtCore.QVariant(self.model.rowCount()*10))
         else:
             f5.setValue(QtCore.QVariant(self.row*10+1))
-        f6.setValue(QtCore.QVariant(isTr))
+        f6.setValue(QtCore.QVariant(iid))
         record.append(f0)
         record.append(f1)
         record.append(f2)

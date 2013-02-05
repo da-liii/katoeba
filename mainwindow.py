@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.createMenuBar()
 
         # signals and slots
-        self.ui.goButton.clicked.connect(self.test)
+        self.ui.goButton.clicked.connect(self.insertByRegex)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegex)
 
     def test(self):
@@ -48,9 +48,9 @@ class MainWindow(QMainWindow):
         sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
         sen.start()
         sen.wait()
-        
 
-    def insertByRegex(self): 
+
+    def insertByRegex(self):
         listid = self.getListId()
         regex = self.ui.comboBox.currentText();
         if len(regex) > 1:
@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
             sen.wait()
         else:
             return
-        self.adjustHeader()
+        self.filter()
 
     def insertTrById(self):
         listid = self.getListId()
@@ -72,14 +72,14 @@ class MainWindow(QMainWindow):
         else:
             stIndex = selection[0]
             row = stIndex.row()
-            iid = stIndex.sibling(row, 1).data().toString()
+            iid = stIndex.sibling(row, 6).data().toString()
             print row
             ddict = {}
             ddict["--is-linked-to"] = iid
             sen = st.Sentence(ddict, self.ui, self.model, row, listid)
             sen.start()
             sen.wait
-        self.adjustHeader()
+        self.filter()
 
     # involving MVC
     def initializeModel(self):
@@ -91,21 +91,24 @@ class MainWindow(QMainWindow):
         self.model.setHeaderData(1, QtCore.Qt.Horizontal, "ID")
         self.model.setHeaderData(2, QtCore.Qt.Horizontal, "List")
         self.model.setHeaderData(3, QtCore.Qt.Horizontal, "Sentence")
-        self.model.setHeaderData(4, QtCore.Qt.Horizontal, "Language")
+        self.model.setHeaderData(4, QtCore.Qt.Horizontal, "Lang")
 
     def createTableView(self):
         view = self.ui.tableView
         view.setModel(self.model)
         view.setShowGrid(False)
-        #view.verticalHeader().hide()
+        view.verticalHeader().hide()
         view.setAlternatingRowColors(True)
         view.hideColumn(0)
         view.hideColumn(5)
         view.hideColumn(6)
         view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows);
         view.setSelectionMode(QtGui.QAbstractItemView.SingleSelection);
-        iconDelegate = IconDelegate()
-        view.setItemDelegateForColumn(4, iconDelegate)
+        view.setItemDelegate(Delegate())
+        view.setColumnWidth(1, 20)
+        view.setColumnWidth(2, 40)
+        view.setColumnWidth(4, 36)
+        view.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
         return view
 
     def createListView(self):
@@ -115,14 +118,11 @@ class MainWindow(QMainWindow):
         llist.setAlternatingRowColors(True)
         llist.clicked.connect(self.showList)
         llist.setCurrentIndex(self.model.relationModel(2).index(0,0))
-        self.adjustHeader()
+        self.filter()
         return llist
 
-    def adjustHeader(self):
-        self.table.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
-        self.table.resizeColumnToContents(1)
+    def filter(self):
         self.model.sort(5, QtCore.Qt.AscendingOrder)
-
 
     # involving menu entry
     def createMenuBar(self):
@@ -172,7 +172,7 @@ class MainWindow(QMainWindow):
         deleteAction.setShortcut(self.tr("Ctrl+D"))
         gotoTatoebaAction.setShortcut(self.tr("Ctrl+G"))
         getTrAction.setShortcut(self.tr("Ctrl+T"))
-    
+
         helpMenu = self.ui.menubar.addMenu(self.tr("&Help"))
         helpMenu.addAction(aboutAction)
         helpMenu.addAction(aboutTatoebaAction)
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         self.model.relationModel(2).insertRecord(count, record)
         self.ui.listView.setCurrentIndex(self.model.relationModel(2).index(count,0))
         self.showList(self.ui.listView.currentIndex())
-        
+
     def deleteAllSentence(self):
         self.model.removeRows(0, self.model.rowCount())
 
@@ -243,13 +243,12 @@ class MainWindow(QMainWindow):
                                           self.tr("You must select one sentence!"))
         else:
             stIndex = selection[0]
-            iid = stIndex.sibling(stIndex.row(), 1).data().toString()
+            iid = stIndex.sibling(stIndex.row(), 6).data().toString()
             url = QtCore.QUrl("http://tatoeba.org/eng/sentences/show/" + iid)
             QDesktopServices.openUrl(url)
 
     def deleteSentence(self):
         selection = self.table.selectionModel().selectedRows(0)
-        
         if len(selection) == 0:
             QtGui.QMessageBox.information(self, self.tr("Delete Sentence From Table"),
                                           self.tr("You must select one sentence!"))
@@ -257,7 +256,7 @@ class MainWindow(QMainWindow):
             stIndex = selection[0]
             row = stIndex.row()
             self.model.removeRow(row)
-            self.adjustHeader()
+            self.filter()
 
     def aboutTatoeba(self):
         QDesktopServices.openUrl(QtCore.QUrl("http://tatoeba.org"))
