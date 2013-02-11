@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
-from PyQt4.QtGui import QMainWindow, QHeaderView, QAction, QDesktopServices
+import os
+from config import *
+from PyQt4.QtGui import QMainWindow, QHeaderView, QAction, QDesktopServices, QFileDialog
 from PyQt4 import QtSql,QtCore
 from ui_mainwindow import *
 from dialog import *
@@ -25,10 +27,21 @@ class MainWindow(QMainWindow):
         # signals and slots
         self.ui.goButton.clicked.connect(self.insertByRegex)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegex)
-        lang = self.langDict()
-        for d in lang.keys():
-            self.ui.fromBox.addItem(lang[d])
-            self.ui.toBox.addItem(lang[d])
+        qApp.aboutToQuit.connect(self.beforeQuit)
+        self.ui.fromBox.setItemDelegate(ItemDelegate())
+        self.ui.toBox.setItemDelegate(ItemDelegate())
+        self.ui.fromBox.addItem("all")
+        self.ui.toBox.addItem("all")
+        for d in config["lang"]:
+            self.ui.fromBox.addItem(d)
+            self.ui.toBox.addItem(d)
+        self.ui.fromBox.setCurrentIndex(config["from"])
+        self.ui.toBox.setCurrentIndex(config["to"])
+
+    def beforeQuit(self):
+        config["to"] = self.ui.toBox.currentIndex()
+        config["from"] = self.ui.fromBox.currentIndex()
+        config.close()
 
     def test(self):
         self.insertById(12)
@@ -68,7 +81,12 @@ class MainWindow(QMainWindow):
         regex = self.ui.comboBox.currentText();
         if len(regex) > 1:
             ddict = {}
-            ddict["-r"] = str('.*' + regex.toUtf8() + '.*')
+            if config["rmode"] == "easy":
+                ddict[config["regex"]] = str('.*' + regex.toUtf8() + '.*')
+            else:
+                ddict[config["regex"]] = str(regex.toUtf8())
+            ddict["--is-translatable-in"] = self.ui.toBox.currentText()
+            ddict["--lang"] = self.ui.fromBox.currentText()
             sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
             sen.start()
             sen.wait()
@@ -83,11 +101,51 @@ class MainWindow(QMainWindow):
         row = stIndex.row()
         iid = stIndex.sibling(row, 6).data().toString()
         ddict = {}
-        ddict["--is-linked-to"] = iid
+        ddict[config["trmode"]] = iid
+        ddict["--lang"] = self.ui.toBox.currentText()
         sen = st.Sentence(ddict, self.ui, self.model, row, listid)
         sen.start()
         sen.wait()
         self.filter()
+
+    def insertAllTrById(self):
+        listid = self.getListId()
+        while self.model.canFetchMore():
+            self.model.fetchMore()
+        cnt = self.model.rowCount()
+        trlist = []
+        for i in range(cnt):
+            stIndex = self.model.index(i,0)
+            row = stIndex.row()
+            iid = stIndex.sibling(row, 6).data().toString()
+            trlist.append(iid)
+        for iid in trlist:
+            ddict = {}
+            ddict[config["trmode"]] = iid
+            ddict["--lang"] = self.ui.toBox.currentText()
+            sen = st.Sentence(ddict, self.ui, self.model, row, listid)
+            sen.start()
+            sen.wait()
+
+    def exportForAnki(self):
+        home = os.getenv("HOME", "/home")
+        fileName = QFileDialog.getOpenFileName(self,
+                                               self.tr("Open File"),
+                                               home,
+                                               self.tr("Any Files"))
+        f = open(fileName, "w")
+        while self.model.canFetchMore():
+            self.model.fetchMore()
+        cnt = self.model.rowCount()
+        for i in range(cnt/2):
+            stIndex = self.model.index(2*i, 0)
+            row = stIndex.row()
+            entry = stIndex.sibling(row, 3).data().toString().toUtf8() + "\t"
+            stIndex = self.model.index(2*i+1, 0)
+            row = stIndex.row()
+            entry += stIndex.sibling(row, 3).data().toString().toUtf8() + "\n"
+            f.write(entry)
+        f.close()
 
     # involving MVC
     def initializeModel(self):
@@ -155,6 +213,14 @@ class MainWindow(QMainWindow):
         listMenu.addAction(clearListAction)
         clearListAction.setShortcut(self.tr("Ctrl+L"))
         clearListAction.triggered.connect(self.deleteAllSentence)
+
+        insertAllTrAction = QAction(self.tr("Insert All Tranlastions"), self)
+        listMenu.addAction(insertAllTrAction)
+        insertAllTrAction.triggered.connect(self.insertAllTrById)
+
+        exportAction = QAction(self.tr("Export For Anki"), self)
+        listMenu.addAction(exportAction)
+        exportAction.triggered.connect(self.exportForAnki)
 
         downloadListAction = QAction(self.tr("Download List"), self)
         listMenu.addAction(downloadListAction)
@@ -258,129 +324,8 @@ class MainWindow(QMainWindow):
             return
         row = stIndex.row()
         self.model.removeRow(row)
-        self.filter()
+        self.table.setCurrentIndex(stIndex)
 
     def aboutTatoeba(self):
         QDesktopServices.openUrl(QtCore.QUrl("http://tatoeba.org"))
 
-    def langDict(self):
-        lang = {}
-        lang["afr"] = "Afrikaans"
-        lang["ain"] = "Ainu"
-        lang["sqi"] = "Albanian"
-        lang["ara"] = "Arabic"
-        lang["hye"] = "Armenian"
-        lang["ast"] = "Asturian"
-        lang["eus"] = "Basque"
-        lang["bel"] = "Belarusian"
-        lang["ben"] = "Bengali"
-        lang["ber"] = "Berber"
-        lang["bos"] = "Bosnian"
-        lang["bre"] = "Breton"
-        lang["bul"] = "Bulgarian"
-        lang["yue"] = "Cantonese"
-        lang["cat"] = "Catalan"
-        lang["cha"] = "Chamorro"
-        lang["cmn"] = "Chinese"
-        lang["hrv"] = "Croatian"
-        lang["cycl"] = "CycL"
-        lang["ces"] = "Czech"
-        lang["dan"] = "Danish"
-        lang["nld"] = "Dutch"
-        lang["arz"] = "Egyptian Arabic"
-        lang["eng"] = "English"
-        lang["epo"] = "Esperanto"
-        lang["est"] = "Estonian"
-        lang["ewe"] = "Ewe"
-        lang["fao"] = "Faroese"
-        lang["fin"] = "Finnish"
-        lang["fra"] = "French"
-        lang["fry"] = "Frisian"
-        lang["glg"] = "Galician"
-        lang["kat"] = "Georgian"
-        lang["deu"] = "German"
-        lang["grn"] = "Guarani"
-        lang["heb"] = "Hebrew"
-        lang["hin"] = "Hindi"
-        lang["hun"] = "Hungarian"
-        lang["isl"] = "Icelandic"
-        lang["ido"] = "Ido"
-        lang["ind"] = "Indonesian"
-        lang["ina"] = "Interlingua"
-        lang["ile"] = "Interlingue"
-        lang["acm"] = "Iraqi Arabic"
-        lang["gle"] = "Irish"
-        lang["ita"] = "Italian"
-        lang["jpn"] = "Japanese"
-        lang["xal"] = "Kalmyk"
-        lang["kaz"] = "Kazakh"
-        lang["tlh"] = "Klingon"
-        lang["kor"] = "Korean"
-        lang["avk"] = "Kotava"
-        lang["kur"] = "Kurdish"
-        lang["ksh"] = "Kölsch"
-        lang["lld"] = "Ladin"
-        lang["lad"] = "Ladino"
-        lang["lat"] = "Latin"
-        lang["lvs"] = "Latvian"
-        lang["lzh"] = "Literary Chinese"
-        lang["lit"] = "Lithuanian"
-        lang["jbo"] = "Lojban"
-        lang["nds"] = "Low Saxon"
-        lang["dsb"] = "Lower Sorbian"
-        lang["mlg"] = "Malagasy"
-        lang["zsm"] = "Malay"
-        lang["mal"] = "Malayalam"
-        lang["mri"] = "Maori"
-        lang["mar"] = "Marathi"
-        lang["ell"] = "Modern Greek"
-        lang["mon"] = "Mongolian"
-        lang["nob"] = "Norwegian (Bokmål)"
-        lang["non"] = "Norwegian (Nynorsk)"
-        lang["nov"] = "Novial"
-        lang["oci"] = "Occitan"
-        lang["orv"] = "Old East Slavic"
-        lang["ang"] = "Old English"
-        lang["tpw"] = "Old Tupi"
-        lang["oss"] = "Ossetian"
-        lang["pes"] = "Persian"
-        lang["pms"] = "Piemontese"
-        lang["pol"] = "Polish"
-        lang["por"] = "Portuguese"
-        lang["pnb"] = "Punjabi"
-        lang["que"] = "Quechua"
-        lang["qya"] = "Quenya"
-        lang["ron"] = "Romanian"
-        lang["roh"] = "Romansh"
-        lang["rus"] = "Russian"
-        lang["san"] = "Sanskrit"
-        lang["gla"] = "Scottish Gaelic"
-        lang["srp"] = "Serbian"
-        lang["wuu"] = "Shanghainese"
-        lang["scn"] = "Sicilian"
-        lang["sjn"] = "Sindarin"
-        lang["slk"] = "Slovak"
-        lang["slv"] = "Slovenian"
-        lang["spa"] = "Spanish"
-        lang["swh"] = "Swahili"
-        lang["swe"] = "Swedish"
-        lang["tgl"] = "Tagalog"
-        lang["tgk"] = "Tajik"
-        lang["tat"] = "Tatar"
-        lang["tel"] = "Telegu"
-        lang["nan"] = "Teochew"
-        lang["tha"] = "Thai"
-        lang["tpi"] = "Tok Pisin"
-        lang["toki"] = "Toki Pona"
-        lang["tur"] = "Turkish"
-        lang["ukr"] = "Ukrainian"
-        lang["hsb"] = "Upper Sorbian"
-        lang["urd"] = "Urdu"
-        lang["uig"] = "Uyghur"
-        lang["uzb"] = "Uzbek"
-        lang["vie"] = "Vietnamese"
-        lang["vol"] = "Volapük"
-        lang["cym"] = "Welsh"
-        lang["xho"] = "Xhosa"
-        lang["yid"] = "Yiddish"
-        return lang

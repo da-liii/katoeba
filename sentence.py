@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from PyQt4 import QtCore, QtSql
 from subprocess import check_output
@@ -22,14 +21,16 @@ class Sentence(QtCore.QThread):
         self.insertSentence()
 
     def insertSentence(self):
-        print self.dict
+        prog = [parser, show_id, show_lang]
+        for key in self.dict.keys():
+            if self.dict[key] != "all":
+                prog.append(key)
+                prog.append(self.dict[key])
         isTr = 'r'
-        key = self.dict.keys()[-1]
-        value = self.dict[key]
-        if key == '--is-linked-to':
+        if '--is-linked-to' in self.dict.keys():
             isTr = 't'
         sentences = unicode(
-            check_output([parser, show_id, show_lang, key, value]),
+            check_output(prog),
             'utf-8').rstrip("\n")
         for st in sentences.split("\n"):
             self.insertRecord(st, isTr)
@@ -51,13 +52,9 @@ class Sentence(QtCore.QThread):
         f3.setValue(QtCore.QVariant(st))
         f4.setValue(QtCore.QVariant(lang))
         if self.row == -1:
-            while self.model.canFetchMore():
-                self.model.fetchMore()
-            cnt = self.model.rowCount()*10
-            f5.setValue(QtCore.QVariant(cnt))
-            print "[count]",cnt
+            f5.setValue(QtCore.QVariant(iid))
         else:
-            f5.setValue(QtCore.QVariant(self.row*10+1))
+            f5.setValue(QtCore.QVariant(self.dict["--is-linked-to"]))
         f6.setValue(QtCore.QVariant(iid))
         record.append(f0)
         record.append(f1)
