@@ -21,10 +21,16 @@ class MainWindow(QMainWindow):
         self.model = QtSql.QSqlRelationalTableModel(self)
         self.initializeModel()
         self.table = self.createTableView()
+        self.scroll = self.table.verticalScrollBar()
+        self.page = 1
         self.list = self.createListView()
         self.createMenuBar()
 
         # signals and slots
+        self.ui.leftButton.clicked.connect(self.leftPage)
+        self.ui.rightButton.clicked.connect(self.rightPage)
+        self.ui.pageEdit.setText("1")
+        self.ui.pageEdit.returnPressed.connect(self.gotoPage)
         self.ui.goButton.clicked.connect(self.insertByRegex)
         self.ui.comboBox.currentIndexChanged.connect(self.insertByRegex)
         qApp.aboutToQuit.connect(self.beforeQuit)
@@ -37,14 +43,31 @@ class MainWindow(QMainWindow):
             self.ui.toBox.addItem(d)
         self.ui.fromBox.setCurrentIndex(config["from"])
         self.ui.toBox.setCurrentIndex(config["to"])
+        print self.table.verticalScrollBar().maximum()
+
+    def gotoPage(self):
+        num, test = self.ui.pageEdit.text().toInt()
+        if test and num > 1:
+            self.scroll.setSliderPosition((num-1)*10)
+            self.page = num
+
+    def leftPage(self):
+        self.page = self.page - 1
+        if self.page < 1:
+            self.page = 1
+        self.ui.pageEdit.setText(str(self.page))
+        self.scroll.setSliderPosition((self.page-1)*10)
+
+    def rightPage(self):
+        self.page = self.page + 1
+        self.ui.pageEdit.setText(str(self.page))
+        self.scroll.setSliderPosition((self.page-1)*10)
 
     def beforeQuit(self):
         config["to"] = self.ui.toBox.currentIndex()
         config["from"] = self.ui.fromBox.currentIndex()
         config.close()
 
-    def test(self):
-        self.insertById(12)
 
     def getListId(self):
         index = self.list.selectionModel().currentIndex()
@@ -90,8 +113,7 @@ class MainWindow(QMainWindow):
             sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
             sen.start()
             sen.wait()
-        else:
-            return
+            self.table.resizeRowsToContents()
 
     def insertTrById(self):
         listid = self.getListId()
@@ -175,6 +197,9 @@ class MainWindow(QMainWindow):
         view.setColumnWidth(2, 40)
         view.setColumnWidth(4, 36)
         view.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
+        view.verticalHeader().setDefaultSectionSize(48)
+        view.verticalScrollBar().setMaximum(300)
+        print view.verticalScrollBar().maximum()
         return view
 
     def createListView(self):

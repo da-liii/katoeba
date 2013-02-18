@@ -34,7 +34,6 @@ class Sentence(QtCore.QThread):
             'utf-8').rstrip("\n")
         for st in sentences.split("\n"):
             self.insertRecord(st, isTr)
-            print "inserted", st
 
     def insertRecord(self, sentence, isTr):
         iid, lang, st = sentence.split("\t")
