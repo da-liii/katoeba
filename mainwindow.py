@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-from config import *
+from preference import *
 from PyQt4.QtGui import QMainWindow, QHeaderView, QAction, QDesktopServices, QFileDialog
 from PyQt4 import QtSql,QtCore
 from ui_mainwindow import *
@@ -10,9 +10,11 @@ import connection
 import sentence as st
 import download as dw
 from delegate import *
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.settings = Preference(self)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.splitter.setStretchFactor(0, 10)
@@ -43,7 +45,10 @@ class MainWindow(QMainWindow):
             self.ui.toBox.addItem(d)
         self.ui.fromBox.setCurrentIndex(config["from"])
         self.ui.toBox.setCurrentIndex(config["to"])
-        print self.table.verticalScrollBar().maximum()
+
+    @QtCore.pyqtSlot(str)
+    def showMessage(self, message):
+        self.ui.statusbar.showMessage(QtCore.QString(unicode(message,"utf8")))
 
     def gotoPage(self):
         num, test = self.ui.pageEdit.text().toInt()
@@ -91,16 +96,13 @@ class MainWindow(QMainWindow):
 
     # involving sentence
     def insertById(self, number):
-        listid = self.getListId()
         ddict = {}
         ddict["--has-id"] = str(number)
-        sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
+        sen = st.Sentence(ddict, self)
         sen.start()
-        self.ui.statusbar.showMessage("inserting "+ str(number))
         sen.wait()
 
     def insertByRegex(self):
-        listid = self.getListId()
         regex = self.ui.comboBox.currentText();
         if len(regex) > 1:
             ddict = {}
@@ -108,9 +110,9 @@ class MainWindow(QMainWindow):
                 ddict[config["regex"]] = str('.*' + regex.toUtf8() + '.*')
             else:
                 ddict[config["regex"]] = str(regex.toUtf8())
-            ddict["--is-translatable-in"] = self.ui.toBox.currentText()
-            ddict["--lang"] = self.ui.fromBox.currentText()
-            sen = st.Sentence(ddict, self.ui, self.model, -1, listid)
+            ddict["--is-translatable-in"] = self.ui.toBox.currentText().toUtf8().__str__()
+            ddict["--lang"] = self.ui.fromBox.currentText().toUtf8().__str__()
+            sen = st.Sentence(ddict, self)
             sen.start()
             sen.wait()
             self.table.resizeRowsToContents()
@@ -121,17 +123,16 @@ class MainWindow(QMainWindow):
         if stIndex == None:
             return
         row = stIndex.row()
-        iid = stIndex.sibling(row, 6).data().toString()
+        iid = stIndex.sibling(row, 6).data().toString().__str__()
         ddict = {}
         ddict[config["trmode"]] = iid
-        ddict["--lang"] = self.ui.toBox.currentText()
-        sen = st.Sentence(ddict, self.ui, self.model, row, listid)
+        ddict["--lang"] = self.ui.toBox.currentText().toUtf8().__str__()
+        sen = st.Sentence(ddict, self)
         sen.start()
         sen.wait()
         self.filter()
 
     def insertAllTrById(self):
-        listid = self.getListId()
         while self.model.canFetchMore():
             self.model.fetchMore()
         cnt = self.model.rowCount()
@@ -139,13 +140,14 @@ class MainWindow(QMainWindow):
         for i in range(cnt):
             stIndex = self.model.index(i,0)
             row = stIndex.row()
-            iid = stIndex.sibling(row, 6).data().toString()
+            iid = stIndex.sibling(row, 6).data().toString().__str__()
             trlist.append(iid)
         for iid in trlist:
             ddict = {}
             ddict[config["trmode"]] = iid
-            ddict["--lang"] = self.ui.toBox.currentText()
-            sen = st.Sentence(ddict, self.ui, self.model, row, listid)
+            ddict["--lang"] = self.ui.toBox.currentText().toUtf8().__str__()
+            ddict["ui"] = "do not pop up"
+            sen = st.Sentence(ddict, self)
             sen.start()
             sen.wait()
 
@@ -221,6 +223,7 @@ class MainWindow(QMainWindow):
         aboutAction = QAction(self.tr("&About"), self)
         aboutTatoebaAction = QAction(self.tr("About Tatoeba"), self)
         preferenceAction = QAction(self.tr("&Preference"), self)
+        preferenceAction.triggered.connect(self.preference)
 
         quitAction.setShortcuts(QtGui.QKeySequence.Quit)
 
@@ -278,6 +281,9 @@ class MainWindow(QMainWindow):
 
         getTrAction.triggered.connect(self.insertTrById)
         aboutTatoebaAction.triggered.connect(self.aboutTatoeba)
+
+    def preference(self):
+        self.settings.show()
 
     # list menu
     def showList(self, index):
@@ -354,3 +360,46 @@ class MainWindow(QMainWindow):
     def aboutTatoeba(self):
         QDesktopServices.openUrl(QtCore.QUrl("http://tatoeba.org"))
 
+    @QtCore.pyqtSlot(dict)
+    def insertSentence(self, ddict):
+        sentences = ddict.pop("st")
+        if len(sentences) == 0:
+            if "ui" not in ddict.keys():
+                QtGui.QMessageBox.information(self, self.tr("No sentences found"),
+                                              self.tr("Please check the corresponding command in the bottom status bar.TAKE CARE OF the *from* and *to* option"))
+            return
+        for each in sentences.split("\n"):
+            self.insertRecord(each, ddict)
+
+    def insertRecord(self, sentence, ddict):
+        listid = self.getListId()
+        if listid == -1:
+            print "listid = -1"
+            return
+        iid, lang, st = sentence.split("\t")
+        record = QtSql.QSqlRecord()
+        f0 = QtSql.QSqlField("stid", QtCore.QVariant.Int)
+        f1 = QtSql.QSqlField("tr", QtCore.QVariant.String)
+        f2 = QtSql.QSqlField("listid", QtCore.QVariant.Int)
+        f3 = QtSql.QSqlField("sentence", QtCore.QVariant.String)
+        f4 = QtSql.QSqlField("lang", QtCore.QVariant.String)
+        f5 = QtSql.QSqlField("sortid", QtCore.QVariant.Int)
+        f6 = QtSql.QSqlField("tatoid", QtCore.QVariant.Int)
+        f0.clear()
+        f1.setValue(QtCore.QVariant(ddict["isTr"]))
+        f2.setValue(QtCore.QVariant(listid))
+        f3.setValue(QtCore.QVariant(st))
+        f4.setValue(QtCore.QVariant(lang))
+        if ddict["isTr"] == 'r':
+            f5.setValue(QtCore.QVariant(iid))
+        else:
+            f5.setValue(QtCore.QVariant(ddict[config["trmode"]]))
+        f6.setValue(QtCore.QVariant(iid))
+        record.append(f0)
+        record.append(f1)
+        record.append(f2)
+        record.append(f3)
+        record.append(f4)
+        record.append(f5)
+        record.append(f6)
+        self.model.insertRecord(-1, record)
