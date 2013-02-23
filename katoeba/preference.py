@@ -1,3 +1,4 @@
+import os
 import shelve
 from PyQt4.QtGui import QDialog
 from ui_preference import *
@@ -5,7 +6,10 @@ from ui_preference import *
 # config["user"] = []
 # block these users, for future usage
 # config["buser"] = []
-config = shelve.open("config.shelf")
+CONFIG_DIR = os.path.expanduser("~/.config/katoeba")
+if os.path.exists(CONFIG_DIR) == False:
+    os.mkdir(CONFIG_DIR)
+config = shelve.open(os.path.expanduser("~/.config/katoeba/config.shelf"))
 cdict = {}
 cdict["trmode"] = {0:"--is-linked-to", 1:"-t",
                    "--is-linked-to":0, "-t":1}

@@ -1,5 +1,6 @@
 from PyQt4 import QtSql, QtGui
 import sys
+import os
 import sentence as st
 
 class Data(object):
@@ -32,7 +33,7 @@ class Data(object):
 
     def createConnection(self):
         self.db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-        self.db.setDatabaseName('tatoeba.db')
+        self.db.setDatabaseName(os.path.expanduser("~/.config/katoeba/tatoeba.db"))
         if not self.db.open():
             QtGui.QMessageBox.critical(None, QtGui.qApp.tr("Cannot open database"),
                                        QtGui.qApp.tr("Unable to establish a database connection.\n"

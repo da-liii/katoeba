@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         if stIndex == None:
             return
         row = stIndex.row()
-        iid = stIndex.sibling(row, 6).data().toString().__str__()
+        iid = stIndex.sibling(row, 6).data().toString().toUtf8().__str__()
         ddict = {}
         ddict[config["trmode"]] = iid
         ddict["--lang"] = self.ui.toBox.currentText().toUtf8().__str__()
@@ -140,7 +140,7 @@ class MainWindow(QMainWindow):
         for i in range(cnt):
             stIndex = self.model.index(i,0)
             row = stIndex.row()
-            iid = stIndex.sibling(row, 6).data().toString().__str__()
+            iid = stIndex.sibling(row, 6).data().toString().toUtf8().__str__()
             trlist.append(iid)
         for iid in trlist:
             ddict = {}
@@ -201,7 +201,6 @@ class MainWindow(QMainWindow):
         view.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
         view.verticalHeader().setDefaultSectionSize(48)
         view.verticalScrollBar().setMaximum(300)
-        print view.verticalScrollBar().maximum()
         return view
 
     def createListView(self):
@@ -377,6 +376,8 @@ class MainWindow(QMainWindow):
             print "listid = -1"
             return
         iid, lang, st = sentence.split("\t")
+        iid = iid.lstrip("\x1b[01m").rstrip("\x1b[0m")
+        lang = lang.lstrip("\x1b[01m").rstrip("\x1b[0m")
         record = QtSql.QSqlRecord()
         f0 = QtSql.QSqlField("stid", QtCore.QVariant.Int)
         f1 = QtSql.QSqlField("tr", QtCore.QVariant.String)
