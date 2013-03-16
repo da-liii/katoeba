@@ -376,8 +376,12 @@ class MainWindow(QMainWindow):
             print "listid = -1"
             return
         iid, lang, st = sentence.split("\t")
-        iid = iid.lstrip("\x1b[01m").rstrip("\x1b[0m")
-        lang = lang.lstrip("\x1b[01m").rstrip("\x1b[0m")
+        print "id", len(iid)
+        print "lang", len(lang)
+        iid = iid.replace("\x1b[01m", "").replace("\x1b[0m", "")
+        lang = lang.replace("\x1b[01m", "").replace("\x1b[0m", "")
+        print "id", len(iid)
+        print "lang", len(lang)
         record = QtSql.QSqlRecord()
         f0 = QtSql.QSqlField("stid", QtCore.QVariant.Int)
         f1 = QtSql.QSqlField("tr", QtCore.QVariant.String)
